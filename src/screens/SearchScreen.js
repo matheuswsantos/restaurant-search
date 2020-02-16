@@ -17,7 +17,7 @@ const SearchScreen = () => {
     };
 
     return (
-        <View>
+        <>
             <SearchBar
                 term={term}
                 onChangeTerm={setTerm}
@@ -42,7 +42,7 @@ const SearchScreen = () => {
                     results={resultsByPrice('$$$')}
                 />
             </ScrollView>
-        </View>
+        </>
     );
 };
 

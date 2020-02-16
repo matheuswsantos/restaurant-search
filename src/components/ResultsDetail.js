@@ -33,7 +33,7 @@ export default ({ result }) => {
             </Text>
 
             <Text>
-                {result.rating} Stars, {result.review_count}
+                {result.rating} Stars, {result.review_count} Reviews
             </Text>
         </View>
     );
