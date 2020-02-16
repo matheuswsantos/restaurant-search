@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, Text, StyleSheet, FlatList, Image } from 'react-native';
+import { Text, StyleSheet, FlatList, Image, View } from 'react-native';
 import yelp from '../api/yelp'
 
 import {
     map as _map,
-    join as _join
+    join as _join,
+    isEmpty as _isEmpty,
+    truncate as _truncate
  } from 'lodash';
+import moment from 'moment';
 
 const styles = StyleSheet.create({
     container: {
@@ -28,6 +31,30 @@ const styles = StyleSheet.create({
         height: 125,
         marginRight: 5,
     },
+
+    openingTimeWrap: {
+        marginTop: 20,
+    },
+
+    openingTimeContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+
+    openingTimeDayOfWeek: {
+        width: 80,
+        fontWeight: 'bold',
+    },
+
+    openingTimeHours: {
+        alignSelf: 'flex-start',
+        flexGrow: 1,
+    },
+
+    openingTimeIsOpen: {
+        fontWeight: 'bold',
+        marginRight: 20,
+    },
 });
 
 export default ({ navigation }) => {
@@ -40,7 +67,6 @@ export default ({ navigation }) => {
             const { data } = await yelp.get(`/${id}`);
 
             setResult(data);
-
         } catch (error) {
             setErrorMessage('Something went wrong')
         }
@@ -48,6 +74,29 @@ export default ({ navigation }) => {
 
     const getCategories = () => {
         return _join(_map(result.categories, 'title'), ', ');
+    };
+
+    const getDayOfWeek = (item) => {
+        return moment().isoWeekday(item.day).format('dddd');
+    };
+
+    const getOpenTime = (item) => {
+        const start = moment(item.start, 'HHmm').format('HH:mm a');
+        const end = moment(item.end, 'HHmm').format('HH:mm a');
+
+        return `${start} - ${end}`;
+    };
+
+    const isOpenNow = (item) => {
+        const isToday = moment().weekday() === item.day;
+
+        if (! isToday) {
+            return null;
+        }
+
+        return result.hours[0].is_open_now
+            ? 'Open'
+            : 'Closed';
     };
 
     useEffect(() => {
@@ -58,8 +107,12 @@ export default ({ navigation }) => {
         return <Text>{errorMessage}</Text>;
     }
 
+    if (_isEmpty(result)) {
+        return null;
+    }
+
     return (
-        <ScrollView style={styles.container}>
+        <View style={styles.container}>
             <FlatList
                 style={styles.images}
                 horizontal
@@ -89,6 +142,29 @@ export default ({ navigation }) => {
             <Text>
                 {result.price} . {getCategories()}
             </Text>
-        </ScrollView>
+
+            <FlatList
+                style={styles.openingTimeWrap}
+                data={result.hours[0].open}
+                keyExtractor={(item, index) => index}
+                renderItem={({ item }) => {
+                    return (
+                        <View style={styles.openingTimeContent}>
+                            <Text style={styles.openingTimeDayOfWeek}>
+                                {getDayOfWeek(item)}
+                            </Text>
+
+                            <Text style={styles.openingTimeHours}>
+                                {getOpenTime(item)}
+                            </Text>
+
+                            <Text style={styles.openingTimeIsOpen}>
+                                {isOpenNow(item)}
+                            </Text>
+                        </View>
+                    );
+                }}
+            />
+        </View>
     );
 };
